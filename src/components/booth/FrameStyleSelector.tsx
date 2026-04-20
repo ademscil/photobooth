@@ -1,6 +1,6 @@
 'use client'
 
-import type { FrameStyle } from '@/lib/composition/frameTemplates'
+import type { FrameStyle } from '@/types'
 import { FRAME_CONFIGS } from '@/lib/composition/frameTemplates'
 
 interface FrameStyleSelectorProps {
@@ -49,61 +49,45 @@ function FramePreview({ style }: { style: FrameStyle }) {
       return (
         <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
           <rect x="2" y="2" width="24" height="24" rx="2" fill="currentColor" opacity="0.15" />
+          <line x1="4" y1="4" x2="24" y2="24" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
+          <line x1="24" y1="4" x2="4" y2="24" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
         </svg>
       )
     case 'classic':
       return (
         <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
-          <rect x="2" y="2" width="24" height="24" rx="2" fill="currentColor" opacity="0.15" />
-          <rect x="2" y="2" width="24" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="4" />
-          <rect x="5" y="5" width="18" height="18" rx="1" fill="none" stroke="white" strokeWidth="2" />
+          <rect x="2" y="2" width="24" height="24" rx="2" fill="currentColor" opacity="0.1" />
+          <rect x="2" y="2" width="24" height="24" rx="2" fill="none" stroke="#c9a84c" strokeWidth="4" />
+          <rect x="5.5" y="5.5" width="17" height="17" rx="1" fill="none" stroke="#f5d78e" strokeWidth="1.5" />
         </svg>
       )
-    case 'film':
-      return (
-        <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
-          <rect x="0" y="0" width="28" height="28" rx="2" fill="currentColor" opacity="0.15" />
-          <rect x="0" y="0" width="6" height="28" fill="currentColor" opacity="0.6" />
-          <rect x="22" y="0" width="6" height="28" fill="currentColor" opacity="0.6" />
-          <rect x="1" y="4" width="4" height="3" rx="1" fill="white" />
-          <rect x="1" y="11" width="4" height="3" rx="1" fill="white" />
-          <rect x="1" y="18" width="4" height="3" rx="1" fill="white" />
-          <rect x="23" y="4" width="4" height="3" rx="1" fill="white" />
-          <rect x="23" y="11" width="4" height="3" rx="1" fill="white" />
-          <rect x="23" y="18" width="4" height="3" rx="1" fill="white" />
-        </svg>
-      )
-    case 'polaroid':
-      return (
-        <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
-          <rect x="2" y="2" width="24" height="24" rx="1" fill="white" stroke="currentColor" strokeWidth="1.5" opacity="0.8" />
-          <rect x="4" y="4" width="20" height="15" rx="1" fill="currentColor" opacity="0.2" />
-          <rect x="4" y="21" width="20" height="4" rx="0" fill="white" />
-        </svg>
-      )
-    case 'modern':
+    case 'floral':
       return (
         <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
           <rect x="2" y="2" width="24" height="24" rx="2" fill="currentColor" opacity="0.1" />
-          <rect x="2" y="2" width="24" height="24" rx="2" fill="none" stroke="url(#grad)" strokeWidth="3" />
-          <defs>
-            <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#6366f1" />
-              <stop offset="100%" stopColor="#8b5cf6" />
-            </linearGradient>
-          </defs>
+          <rect x="2" y="2" width="24" height="24" rx="2" fill="none" stroke="#f9a8d4" strokeWidth="3" />
+          <circle cx="4" cy="4" r="3" fill="#ec4899" />
+          <circle cx="24" cy="4" r="3" fill="#ec4899" />
+          <circle cx="4" cy="24" r="3" fill="#ec4899" />
+          <circle cx="24" cy="24" r="3" fill="#ec4899" />
         </svg>
       )
-    case 'vintage':
+    case 'minimal':
       return (
         <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
-          <rect x="2" y="2" width="24" height="24" rx="1" fill="currentColor" opacity="0.1" />
-          <rect x="2" y="2" width="24" height="24" rx="1" fill="none" stroke="#92400e" strokeWidth="2" />
-          <rect x="5" y="5" width="18" height="18" rx="1" fill="none" stroke="#92400e" strokeWidth="1" />
-          <circle cx="3.5" cy="3.5" r="2" fill="#92400e" />
-          <circle cx="24.5" cy="3.5" r="2" fill="#92400e" />
-          <circle cx="3.5" cy="24.5" r="2" fill="#92400e" />
-          <circle cx="24.5" cy="24.5" r="2" fill="#92400e" />
+          <rect x="2" y="2" width="24" height="24" rx="2" fill="currentColor" opacity="0.1" />
+          <polyline points="2,8 2,2 8,2" fill="none" stroke="#6366f1" strokeWidth="2.5" />
+          <polyline points="20,2 26,2 26,8" fill="none" stroke="#6366f1" strokeWidth="2.5" />
+          <polyline points="2,20 2,26 8,26" fill="none" stroke="#6366f1" strokeWidth="2.5" />
+          <polyline points="20,26 26,26 26,20" fill="none" stroke="#6366f1" strokeWidth="2.5" />
+        </svg>
+      )
+    case 'dark':
+      return (
+        <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
+          <rect x="0" y="0" width="28" height="28" rx="2" fill="#111827" />
+          <rect x="4" y="4" width="20" height="20" rx="1" fill="currentColor" opacity="0.2" />
+          <rect x="4" y="4" width="20" height="20" rx="1" fill="none" stroke="#f59e0b" strokeWidth="1" />
         </svg>
       )
     default:

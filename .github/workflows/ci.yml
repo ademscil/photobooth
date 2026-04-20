@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run lint
@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run typecheck
@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run test
@@ -46,11 +46,21 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    env:
+      # Dummy values for build — real values set in Vercel
+      MIDTRANS_SERVER_KEY: dummy-server-key
+      NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: dummy-client-key
+      NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION: "false"
+      NEXT_PUBLIC_PHOTO_PRICE: "15000"
+      NEXT_PUBLIC_PRINT_PRICE: "5000"
+      NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: dummy-cloud
+      NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: dummy-preset
+      VOUCHER_CODES: "CASH001"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run build

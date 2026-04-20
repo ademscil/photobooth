@@ -11,9 +11,9 @@ interface TemplateSelectorProps {
   disabled?: boolean
 }
 
-const BUILT_IN: { id: Exclude<TemplateId, 'custom'>; label: string; diagram: React.ReactNode }[] = [
+const BUILT_IN: { id: Exclude<TemplateId, 'custom'>; label: string; shots: number; diagram: React.ReactNode }[] = [
   {
-    id: 'single', label: 'Single',
+    id: 'single', label: 'Single', shots: 1,
     diagram: (
       <svg viewBox="0 0 30 40" className="h-full w-full" aria-hidden="true">
         <rect x="2" y="2" width="26" height="36" rx="1" fill="currentColor" opacity="0.3" />
@@ -21,7 +21,7 @@ const BUILT_IN: { id: Exclude<TemplateId, 'custom'>; label: string; diagram: Rea
     ),
   },
   {
-    id: 'double', label: 'Double',
+    id: 'double', label: 'Double', shots: 2,
     diagram: (
       <svg viewBox="0 0 30 50" className="h-full w-full" aria-hidden="true">
         <rect x="2" y="2" width="26" height="21" rx="1" fill="currentColor" opacity="0.3" />
@@ -30,7 +30,7 @@ const BUILT_IN: { id: Exclude<TemplateId, 'custom'>; label: string; diagram: Rea
     ),
   },
   {
-    id: 'grid', label: 'Grid',
+    id: 'grid', label: 'Grid', shots: 4,
     diagram: (
       <svg viewBox="0 0 40 40" className="h-full w-full" aria-hidden="true">
         <rect x="2" y="2" width="17" height="17" rx="1" fill="currentColor" opacity="0.3" />
@@ -41,7 +41,7 @@ const BUILT_IN: { id: Exclude<TemplateId, 'custom'>; label: string; diagram: Rea
     ),
   },
   {
-    id: 'strip', label: 'Strip',
+    id: 'strip', label: 'Strip', shots: 4,
     diagram: (
       <svg viewBox="0 0 20 70" className="h-full w-full" aria-hidden="true">
         <rect x="2" y="2" width="16" height="14" rx="1" fill="currentColor" opacity="0.3" />
@@ -52,17 +52,19 @@ const BUILT_IN: { id: Exclude<TemplateId, 'custom'>; label: string; diagram: Rea
     ),
   },
   {
-    id: 'filmstrip', label: 'Film',
+    id: 'filmstrip', label: 'Film', shots: 4,
     diagram: (
       <svg viewBox="0 0 24 70" className="h-full w-full" aria-hidden="true">
-        <rect x="0" y="0" width="4" height="70" fill="currentColor" opacity="0.6" />
-        <rect x="20" y="0" width="4" height="70" fill="currentColor" opacity="0.6" />
-        {[6, 20, 34, 48, 62].map((y) => (
-          <rect key={y} x="1" y={y} width="2" height="6" rx="0.5" fill="white" opacity="0.8" />
+        {/* sprocket holes */}
+        <rect x="1" y="0" width="3" height="70" fill="currentColor" opacity="0.15" />
+        <rect x="20" y="0" width="3" height="70" fill="currentColor" opacity="0.15" />
+        {[4, 14, 24, 34, 44, 54, 64].map((y) => (
+          <rect key={y} x="1.5" y={y} width="2" height="4" rx="0.5" fill="currentColor" opacity="0.5" />
         ))}
-        {[6, 20, 34, 48, 62].map((y) => (
-          <rect key={y + 100} x="21" y={y} width="2" height="6" rx="0.5" fill="white" opacity="0.8" />
+        {[4, 14, 24, 34, 44, 54, 64].map((y) => (
+          <rect key={y + 100} x="20.5" y={y} width="2" height="4" rx="0.5" fill="currentColor" opacity="0.5" />
         ))}
+        {/* frames */}
         <rect x="5" y="2" width="14" height="14" rx="1" fill="currentColor" opacity="0.3" />
         <rect x="5" y="19" width="14" height="14" rx="1" fill="currentColor" opacity="0.3" />
         <rect x="5" y="36" width="14" height="14" rx="1" fill="currentColor" opacity="0.3" />
@@ -71,22 +73,23 @@ const BUILT_IN: { id: Exclude<TemplateId, 'custom'>; label: string; diagram: Rea
     ),
   },
   {
-    id: 'polaroid', label: 'Polaroid',
+    id: 'polaroid', label: 'Polaroid', shots: 1,
     diagram: (
-      <svg viewBox="0 0 34 40" className="h-full w-full" aria-hidden="true">
-        <rect x="1" y="1" width="32" height="38" rx="1" fill="white" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <rect x="4" y="4" width="26" height="24" rx="1" fill="currentColor" opacity="0.3" />
-        <rect x="4" y="30" width="26" height="6" rx="1" fill="currentColor" opacity="0.1" />
+      <svg viewBox="0 0 36 44" className="h-full w-full" aria-hidden="true">
+        <rect x="2" y="2" width="32" height="40" rx="2" fill="currentColor" opacity="0.15" />
+        <rect x="5" y="5" width="26" height="26" rx="1" fill="currentColor" opacity="0.3" />
+        {/* caption area */}
+        <rect x="8" y="34" width="20" height="3" rx="1" fill="currentColor" opacity="0.2" />
       </svg>
     ),
   },
   {
-    id: 'collage3', label: 'Collage',
+    id: 'collage3', label: 'Collage', shots: 3,
     diagram: (
-      <svg viewBox="0 0 40 30" className="h-full w-full" aria-hidden="true">
-        <rect x="2" y="2" width="22" height="26" rx="1" fill="currentColor" opacity="0.3" />
-        <rect x="26" y="2" width="12" height="12" rx="1" fill="currentColor" opacity="0.3" />
-        <rect x="26" y="16" width="12" height="12" rx="1" fill="currentColor" opacity="0.3" />
+      <svg viewBox="0 0 50 38" className="h-full w-full" aria-hidden="true">
+        <rect x="2" y="2" width="27" height="34" rx="1" fill="currentColor" opacity="0.3" />
+        <rect x="32" y="2" width="16" height="16" rx="1" fill="currentColor" opacity="0.3" />
+        <rect x="32" y="21" width="16" height="15" rx="1" fill="currentColor" opacity="0.3" />
       </svg>
     ),
   },
@@ -96,7 +99,7 @@ export function TemplateSelector({ value, onChange, disabled = false }: Template
   const [showBuilder, setShowBuilder] = useState(false)
   const { customTemplate, setCustomTemplate } = useSessionStore()
 
-  const allItems = [...BUILT_IN.map(t => t.id), 'custom' as const]
+  const allIds = [...BUILT_IN.map(t => t.id), 'custom' as const]
 
   const handleSelect = (id: TemplateId) => {
     if (disabled) return
@@ -106,12 +109,12 @@ export function TemplateSelector({ value, onChange, disabled = false }: Template
 
   const handleArrowKey = (e: React.KeyboardEvent, currentIndex: number) => {
     let next = currentIndex
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (currentIndex + 1) % allItems.length
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (currentIndex - 1 + allItems.length) % allItems.length
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (currentIndex + 1) % allIds.length
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (currentIndex - 1 + allIds.length) % allIds.length
     else return
     e.preventDefault()
-    handleSelect(allItems[next])
-    document.getElementById(`template-${allItems[next]}`)?.focus()
+    handleSelect(allIds[next])
+    document.getElementById(`template-${allIds[next]}`)?.focus()
   }
 
   return (
@@ -126,6 +129,7 @@ export function TemplateSelector({ value, onChange, disabled = false }: Template
 
       <div className="flex flex-col gap-2">
         <p className="text-xs font-medium text-muted-foreground">Layout</p>
+        {/* 4 columns on first row, 4 on second row */}
         <div role="radiogroup" aria-label="Layout template" className="grid grid-cols-4 gap-1.5">
           {BUILT_IN.map((t, i) => {
             const isSelected = value === t.id
@@ -135,7 +139,7 @@ export function TemplateSelector({ value, onChange, disabled = false }: Template
                 id={`template-${t.id}`}
                 role="radio"
                 aria-checked={isSelected}
-                aria-label={t.label}
+                aria-label={`${t.label} (${t.shots} foto)`}
                 tabIndex={isSelected ? 0 : -1}
                 onClick={() => handleSelect(t.id)}
                 onKeyDown={(e) => {
@@ -147,7 +151,8 @@ export function TemplateSelector({ value, onChange, disabled = false }: Template
                 } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
               >
                 <div className="h-7 w-7">{t.diagram}</div>
-                <span className="text-[10px] font-medium">{t.label}</span>
+                <span className="text-[9px] font-medium leading-tight text-center">{t.label}</span>
+                <span className="text-[8px] text-muted-foreground">{t.shots}x</span>
               </div>
             )
           })}
@@ -171,20 +176,15 @@ export function TemplateSelector({ value, onChange, disabled = false }: Template
             <svg className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            <span className="text-[10px] font-medium">Custom</span>
+            <span className="text-[9px] font-medium">Custom</span>
+            <span className="text-[8px] text-muted-foreground">upload</span>
           </div>
         </div>
 
         {value === 'custom' && customTemplate && (
           <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 dark:border-green-800 dark:bg-green-950">
             <span className="text-xs text-green-700 dark:text-green-300">✓ {customTemplate.name}</span>
-            <button
-              type="button"
-              onClick={() => !disabled && setShowBuilder(true)}
-              className="text-xs text-green-600 underline hover:no-underline dark:text-green-400"
-            >
-              Edit
-            </button>
+            <button type="button" onClick={() => !disabled && setShowBuilder(true)} className="text-xs text-green-600 underline hover:no-underline dark:text-green-400">Edit</button>
           </div>
         )}
       </div>

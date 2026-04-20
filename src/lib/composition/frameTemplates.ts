@@ -1,4 +1,9 @@
-export type FrameStyle = 'none' | 'classic' | 'film' | 'polaroid' | 'modern' | 'vintage'
+/**
+ * Pre-built frame style decorations drawn on top of the composition.
+ * These are purely canvas-drawn (no image uploads required).
+ */
+
+export type FrameStyle = 'none' | 'classic' | 'floral' | 'minimal' | 'dark'
 
 export interface FrameConfig {
   id: FrameStyle
@@ -7,93 +12,119 @@ export interface FrameConfig {
 }
 
 export const FRAME_CONFIGS: FrameConfig[] = [
-  { id: 'none', name: 'Tanpa Frame', description: 'Foto polos tanpa border' },
-  { id: 'classic', name: 'Classic', description: 'Border putih elegan' },
-  { id: 'film', name: 'Film Strip', description: 'Gaya film strip klasik' },
-  { id: 'polaroid', name: 'Polaroid', description: 'Gaya foto polaroid' },
-  { id: 'modern', name: 'Modern', description: 'Border tipis modern' },
-  { id: 'vintage', name: 'Vintage', description: 'Frame vintage dengan ornamen' },
+  { id: 'none', name: 'None', description: 'No frame' },
+  { id: 'classic', name: 'Classic', description: 'Gold border frame' },
+  { id: 'floral', name: 'Floral', description: 'Pink floral corners' },
+  { id: 'minimal', name: 'Minimal', description: 'Corner accents' },
+  { id: 'dark', name: 'Dark', description: 'Dark border with gold line' },
 ]
 
 /**
- * Draws a decorative frame on the canvas after photos are placed.
- * Called by composer.ts after drawing all photo slots.
+ * Draws a pre-built frame style onto the canvas.
  */
 export function drawFrameStyle(
   ctx: CanvasRenderingContext2D,
   style: FrameStyle,
-  width: number,
-  height: number,
+  w: number,
+  h: number,
 ): void {
+  if (style === 'none') return
+
+  ctx.save()
+
   switch (style) {
     case 'classic':
-      ctx.strokeStyle = '#000'
-      ctx.lineWidth = 4
-      ctx.strokeRect(8, 8, width - 16, height - 16)
-      ctx.strokeStyle = '#fff'
-      ctx.lineWidth = 20
-      ctx.strokeRect(14, 14, width - 28, height - 28)
+      drawClassicFrame(ctx, w, h)
       break
-
-    case 'film': {
-      ctx.fillStyle = '#1a1a1a'
-      ctx.fillRect(0, 0, 40, height)
-      ctx.fillRect(width - 40, 0, 40, height)
-      ctx.fillStyle = '#fff'
-      for (let y = 20; y < height; y += 40) {
-        ctx.beginPath()
-        ctx.roundRect(8, y, 24, 20, 4)
-        ctx.fill()
-        ctx.beginPath()
-        ctx.roundRect(width - 32, y, 24, 20, 4)
-        ctx.fill()
-      }
+    case 'floral':
+      drawFloralFrame(ctx, w, h)
       break
-    }
-
-    case 'polaroid':
-      ctx.fillStyle = '#fff'
-      ctx.fillRect(0, 0, width, height)
-      ctx.strokeStyle = '#e5e7eb'
-      ctx.lineWidth = 2
-      ctx.strokeRect(1, 1, width - 2, height - 2)
-      ctx.fillStyle = '#fff'
-      ctx.fillRect(20, height - 80, width - 40, 60)
+    case 'minimal':
+      drawMinimalFrame(ctx, w, h)
       break
-
-    case 'modern': {
-      const gradient = ctx.createLinearGradient(0, 0, width, height)
-      gradient.addColorStop(0, '#6366f1')
-      gradient.addColorStop(1, '#8b5cf6')
-      ctx.strokeStyle = gradient
-      ctx.lineWidth = 12
-      ctx.strokeRect(6, 6, width - 12, height - 12)
-      break
-    }
-
-    case 'vintage': {
-      ctx.strokeStyle = '#92400e'
-      ctx.lineWidth = 6
-      ctx.strokeRect(10, 10, width - 20, height - 20)
-      ctx.lineWidth = 2
-      ctx.strokeRect(20, 20, width - 40, height - 40)
-      const corners: [number, number][] = [
-        [15, 15],
-        [width - 15, 15],
-        [15, height - 15],
-        [width - 15, height - 15],
-      ]
-      ctx.fillStyle = '#92400e'
-      corners.forEach(([x, y]) => {
-        ctx.beginPath()
-        ctx.arc(x, y, 6, 0, Math.PI * 2)
-        ctx.fill()
-      })
-      break
-    }
-
-    case 'none':
-    default:
+    case 'dark':
+      drawDarkFrame(ctx, w, h)
       break
   }
+
+  ctx.restore()
+}
+
+function drawClassicFrame(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const b = Math.round(w * 0.04)
+  // Outer gold border
+  ctx.strokeStyle = '#c9a84c'
+  ctx.lineWidth = b
+  ctx.strokeRect(b / 2, b / 2, w - b, h - b)
+  // Inner thin line
+  ctx.strokeStyle = '#f5d78e'
+  ctx.lineWidth = Math.max(2, b * 0.3)
+  const inset = b * 1.4
+  ctx.strokeRect(inset, inset, w - inset * 2, h - inset * 2)
+}
+
+function drawFloralFrame(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const b = Math.round(w * 0.05)
+  // Pink/rose border
+  ctx.strokeStyle = '#f9a8d4'
+  ctx.lineWidth = b
+  ctx.strokeRect(b / 2, b / 2, w - b, h - b)
+  // Corner flowers (simple circles)
+  const r = b * 1.2
+  const positions = [
+    [b, b], [w - b, b], [b, h - b], [w - b, h - b],
+  ]
+  ctx.fillStyle = '#ec4899'
+  positions.forEach(([x, y]) => {
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fill()
+    // Petals
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+      ctx.beginPath()
+      ctx.arc(x + Math.cos(a) * r * 0.9, y + Math.sin(a) * r * 0.9, r * 0.5, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  })
+}
+
+function drawMinimalFrame(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const b = Math.round(w * 0.025)
+  // Thin white border with shadow effect
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = b
+  ctx.strokeRect(b / 2, b / 2, w - b, h - b)
+  // Corner accents
+  const len = Math.round(w * 0.08)
+  const inset = b * 2
+  ctx.strokeStyle = '#6366f1'
+  ctx.lineWidth = Math.max(3, b * 0.6)
+  const corners = [
+    [[inset, inset + len], [inset, inset], [inset + len, inset]],
+    [[w - inset - len, inset], [w - inset, inset], [w - inset, inset + len]],
+    [[inset, h - inset - len], [inset, h - inset], [inset + len, h - inset]],
+    [[w - inset - len, h - inset], [w - inset, h - inset], [w - inset, h - inset - len]],
+  ]
+  corners.forEach((pts) => {
+    ctx.beginPath()
+    ctx.moveTo(pts[0][0], pts[0][1])
+    ctx.lineTo(pts[1][0], pts[1][1])
+    ctx.lineTo(pts[2][0], pts[2][1])
+    ctx.stroke()
+  })
+}
+
+function drawDarkFrame(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const b = Math.round(w * 0.05)
+  // Dark border
+  ctx.fillStyle = '#111827'
+  ctx.fillRect(0, 0, w, b)
+  ctx.fillRect(0, h - b, w, b)
+  ctx.fillRect(0, 0, b, h)
+  ctx.fillRect(w - b, 0, b, h)
+  // Gold inner line
+  ctx.strokeStyle = '#f59e0b'
+  ctx.lineWidth = Math.max(2, b * 0.15)
+  const inset = b + ctx.lineWidth
+  ctx.strokeRect(inset, inset, w - inset * 2, h - inset * 2)
 }

@@ -46,7 +46,6 @@ export const TEMPLATES: Record<Exclude<TemplateId, 'custom'>, Template> = {
       { x: 0.05, y: 0.736, width: 0.9, height: 0.215 },
     ],
   },
-  // Film strip: 4 photos in vertical strip with sprocket-hole decoration
   filmstrip: {
     id: 'filmstrip',
     name: 'Film Strip',
@@ -60,7 +59,6 @@ export const TEMPLATES: Record<Exclude<TemplateId, 'custom'>, Template> = {
       { x: 0.12, y: 0.736, width: 0.76, height: 0.215 },
     ],
   },
-  // Polaroid: 1 photo with thick white border and caption area
   polaroid: {
     id: 'polaroid',
     name: 'Polaroid',
@@ -69,7 +67,6 @@ export const TEMPLATES: Record<Exclude<TemplateId, 'custom'>, Template> = {
     padding: 0.06,
     slots: [{ x: 0.06, y: 0.06, width: 0.88, height: 0.72 }],
   },
-  // 3-photo collage: 1 large left + 2 small stacked right
   collage3: {
     id: 'collage3',
     name: 'Collage 3',
@@ -88,9 +85,7 @@ export function getTemplate(id: TemplateId): Template {
   if (id === 'custom') {
     throw new Error('getTemplate() should not be called for custom templates')
   }
-  const template = TEMPLATES[id]
-  if (!template) {
-    throw new Error(`Unknown template ID: ${id}`)
-  }
+  const template = TEMPLATES[id as Exclude<TemplateId, 'custom'>]
+  if (!template) throw new Error(`Unknown template ID: ${id}`)
   return template
 }
