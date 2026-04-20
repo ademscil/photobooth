@@ -1,6 +1,6 @@
 import type { CapturedFrame, CompositionOptions, CustomTemplate, FilterId } from '@/types'
 import { getTemplate } from './templates'
-import { drawFrame, drawLabel } from './decorations'
+import { drawFrame, drawLabel, drawFilmstripDecoration, drawPolaroidDecoration } from './decorations'
 import { drawFrameStyle } from './frameTemplates'
 
 /** 4R print size reference: 10×15cm at 300dpi ≈ 1181×1772px
@@ -44,6 +44,13 @@ export function compose(
     if (!frame) return
     drawFrameInSlot(ctx, frame, slot.x * canvasWidth, slot.y * canvasHeight, slot.width * canvasWidth, slot.height * canvasHeight, filter)
   })
+
+  // Template-specific decorations (drawn after photos, before frame overlays)
+  if (templateId === 'filmstrip') {
+    drawFilmstripDecoration(ctx, canvasWidth, canvasHeight)
+  } else if (templateId === 'polaroid') {
+    drawPolaroidDecoration(ctx, canvasWidth, canvasHeight)
+  }
 
   if (frameEnabled) drawFrame(ctx, canvasWidth, canvasHeight)
   if (options.frameStyle && options.frameStyle !== 'none') {

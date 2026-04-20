@@ -74,8 +74,8 @@ export interface SessionState extends ConfigSlice, CaptureSlice, CameraSlice {
   resetSession: () => void
 }
 
-const TEMPLATE_SHOT_COUNT: Record<TemplateId, 1 | 2 | 4> = {
-  single: 1, double: 2, grid: 4, strip: 4, custom: 1,
+const TEMPLATE_SHOT_COUNT: Record<TemplateId, 1 | 2 | 3 | 4> = {
+  single: 1, double: 2, grid: 4, strip: 4, filmstrip: 4, polaroid: 1, collage3: 3, custom: 1,
 }
 
 const initialConfig: ConfigSlice = {

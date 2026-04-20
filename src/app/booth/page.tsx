@@ -374,8 +374,8 @@ export default function BoothPage() {
                   )}
 
                   <figure
-                    className="relative w-full max-w-2xl overflow-hidden rounded-xl bg-neutral-900"
-                    style={{ aspectRatio: '4/3' }}
+                    className="relative w-full overflow-hidden rounded-xl bg-neutral-900"
+                    style={{ aspectRatio: '4/3', maxWidth: '640px', maxHeight: '50vh' }}
                     aria-label="Live camera preview"
                   >
                     {!camera.isReady && (

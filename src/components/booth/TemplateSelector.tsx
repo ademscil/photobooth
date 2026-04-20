@@ -51,6 +51,45 @@ const BUILT_IN: { id: Exclude<TemplateId, 'custom'>; label: string; diagram: Rea
       </svg>
     ),
   },
+  {
+    id: 'filmstrip', label: 'Film',
+    diagram: (
+      <svg viewBox="0 0 24 70" className="h-full w-full" aria-hidden="true">
+        <rect x="0" y="0" width="4" height="70" fill="currentColor" opacity="0.6" />
+        <rect x="20" y="0" width="4" height="70" fill="currentColor" opacity="0.6" />
+        {[6, 20, 34, 48, 62].map((y) => (
+          <rect key={y} x="1" y={y} width="2" height="6" rx="0.5" fill="white" opacity="0.8" />
+        ))}
+        {[6, 20, 34, 48, 62].map((y) => (
+          <rect key={y + 100} x="21" y={y} width="2" height="6" rx="0.5" fill="white" opacity="0.8" />
+        ))}
+        <rect x="5" y="2" width="14" height="14" rx="1" fill="currentColor" opacity="0.3" />
+        <rect x="5" y="19" width="14" height="14" rx="1" fill="currentColor" opacity="0.3" />
+        <rect x="5" y="36" width="14" height="14" rx="1" fill="currentColor" opacity="0.3" />
+        <rect x="5" y="53" width="14" height="14" rx="1" fill="currentColor" opacity="0.3" />
+      </svg>
+    ),
+  },
+  {
+    id: 'polaroid', label: 'Polaroid',
+    diagram: (
+      <svg viewBox="0 0 34 40" className="h-full w-full" aria-hidden="true">
+        <rect x="1" y="1" width="32" height="38" rx="1" fill="white" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+        <rect x="4" y="4" width="26" height="24" rx="1" fill="currentColor" opacity="0.3" />
+        <rect x="4" y="30" width="26" height="6" rx="1" fill="currentColor" opacity="0.1" />
+      </svg>
+    ),
+  },
+  {
+    id: 'collage3', label: 'Collage',
+    diagram: (
+      <svg viewBox="0 0 40 30" className="h-full w-full" aria-hidden="true">
+        <rect x="2" y="2" width="22" height="26" rx="1" fill="currentColor" opacity="0.3" />
+        <rect x="26" y="2" width="12" height="12" rx="1" fill="currentColor" opacity="0.3" />
+        <rect x="26" y="16" width="12" height="12" rx="1" fill="currentColor" opacity="0.3" />
+      </svg>
+    ),
+  },
 ]
 
 export function TemplateSelector({ value, onChange, disabled = false }: TemplateSelectorProps) {
@@ -87,7 +126,7 @@ export function TemplateSelector({ value, onChange, disabled = false }: Template
 
       <div className="flex flex-col gap-2">
         <p className="text-xs font-medium text-muted-foreground">Layout</p>
-        <div role="radiogroup" aria-label="Layout template" className="grid grid-cols-5 gap-1.5">
+        <div role="radiogroup" aria-label="Layout template" className="grid grid-cols-4 gap-1.5">
           {BUILT_IN.map((t, i) => {
             const isSelected = value === t.id
             return (

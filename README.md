@@ -1,164 +1,124 @@
 # 📸 Photobooth
 
-A professional, browser-based photobooth application built with Next.js. Capture photos with your webcam, apply filters, compose layouts, and download your shots — all client-side, no backend required.
+> Professional browser-based photobooth application for events, personal use, and branded activations.
 
-> **Live demo:** _Deploy your own in one click below_
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-org/photobooth)
-[![CI](https://github.com/your-org/photobooth/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/photobooth/actions/workflows/ci.yml)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ademscil/photobooth)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-
----
 
 ## ✨ Features
 
-- **Live camera preview** — works with built-in webcams, USB webcams, and DSLR/mirrorless cameras configured as webcam-compatible sources
-- **Camera source selector** — pick from all browser-visible video input devices
-- **Countdown timer** — 3s, 5s, or 10s countdown before each shot
-- **Multi-shot sessions** — capture 1, 2, or 4 photos per session
-- **Layout templates** — Single Portrait, 2-Shot Vertical, 4-Shot Grid, Classic Strip
-- **Visual filters** — Normal, Grayscale, B&W, Sepia, Vintage + brightness/contrast controls
-- **Frame & label** — optional border and event text overlay on the final composition
-- **Export** — download as PNG or JPEG (with quality control) at 2× resolution
-- **Retake flow** — retake any shot before finalising
-- **Fully client-side** — no server, no storage, privacy-first
-- **Accessible** — keyboard navigable, WCAG 2.1 AA contrast, screen-reader friendly
-- **Responsive** — desktop, tablet, and mobile
-
----
+- **Multiple layout templates** — Single, Double, Grid, Strip, Film Strip, Polaroid, 3-Photo Collage, and fully custom
+- **Live filters** — Normal, Grayscale, B&W, Sepia, Vintage applied in real-time
+- **Decorative frame styles** — Classic, Film, Polaroid, Modern, Vintage overlays
+- **Custom template builder** — Upload your own background and overlay images with configurable photo slots
+- **QRIS payment** — Integrated Midtrans payment gateway for cashless transactions
+- **Cash voucher support** — Operator-issued voucher codes for cash payments
+- **Session timer** — Configurable per-session countdown (default 5 min × 2 sessions)
+- **Boomerang export** — Ping-pong WebM animation from captured frames
+- **QR download** — Cloudinary-hosted photos accessible via QR code scan
+- **DSLR support** — Works with any HDMI capture card as a webcam source
+- **Responsive UI** — Works on desktop and mobile browsers
+- **Accessible** — WCAG-oriented markup with keyboard navigation and screen reader support
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- Node.js 20.9+
-- npm 10+
-
-### Setup
-
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/photobooth.git
+# 1. Clone the repository
+git clone https://github.com/ademscil/photobooth.git
 cd photobooth
 
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Start the development server
+# 3. Configure environment variables
+cp .env.example .env.local
+# Edit .env.local with your Midtrans and Cloudinary credentials
+
+# 4. Start development server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-> **Note:** Camera access requires a secure context. `localhost` works without HTTPS. For any other hostname, HTTPS is required.
+## 💳 Pricing Tiers
 
----
+| Tier | Price | Sessions | Templates | Print |
+|------|-------|----------|-----------|-------|
+| Basic | Rp 15.000 | 2 × 5 min | 1 downloadable | 1 × 4R |
+| Premium | Rp 25.000 | 2 × 5 min | 2 downloadable | 2 × 4R |
 
-## 📦 Scripts
+Prices are configurable via `NEXT_PUBLIC_PHOTO_PRICE` and `NEXT_PUBLIC_PRINT_PRICE` environment variables.
 
-| Script | Description |
-|---|---|
-| `npm run dev` | Start development server (Turbopack) |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run lint:fix` | Run ESLint with auto-fix |
-| `npm run typecheck` | Run TypeScript type checker |
-| `npm run test` | Run unit and component tests (single run) |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run test:coverage` | Run tests with coverage report |
+## 📷 Camera Support
 
----
+Any camera that appears as a webcam in the browser is supported:
 
-## 🏗️ Architecture
+- **Built-in webcam** — works out of the box
+- **USB webcam** — plug and play
+- **DSLR / mirrorless** — connect via HDMI capture card (e.g. Elgato Cam Link, Magewell)
+- **Multiple cameras** — switch between devices in the UI
 
-This is a **client-side-only Next.js application**. All camera access, image processing, composition, and export happen in the browser using native Web APIs.
+## 🔧 Configuration
 
-```
-Browser
-├── Next.js App Router (React UI)
-├── Zustand session store
-├── navigator.mediaDevices (getUserMedia + enumerateDevices)
-├── Canvas API (composition + export)
-└── CSS filters (live preview)
-```
+Copy `.env.example` to `.env.local` and fill in your values:
 
-### Key modules
-
-| Path | Responsibility |
-|---|---|
-| `src/lib/camera/` | Stream lifecycle, device enumeration, constraints |
-| `src/lib/filters/` | CSS filter strings + canvas pixel manipulation |
-| `src/lib/composition/` | Template layout engine + canvas composer |
-| `src/lib/export/` | PNG/JPEG export + filename generation |
-| `src/store/sessionStore.ts` | Zustand session state |
-| `src/components/booth/` | Capture workspace UI components |
-| `src/components/review/` | Review screen + export panel |
-| `src/components/errors/` | Error and permission state components |
-
-### Camera device support
-
-The app supports any camera that the browser can access via `navigator.mediaDevices`:
-
-- ✅ Built-in laptop/desktop webcams
-- ✅ USB webcams
-- ✅ HDMI capture cards
-- ✅ DSLR/mirrorless cameras in webcam mode (Canon EOS Webcam Utility, Sony Imaging Edge, etc.)
-- ❌ Direct DSLR tethering via vendor SDK (Phase 2 — requires native app)
-
----
+| Variable | Description |
+|----------|-------------|
+| `MIDTRANS_SERVER_KEY` | Midtrans server key (keep secret, server-side only) |
+| `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` | Midtrans client key (public) |
+| `NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION` | `true` for production, `false` for sandbox |
+| `NEXT_PUBLIC_MERCHANT_ID` | Your Midtrans merchant ID |
+| `NEXT_PUBLIC_PHOTO_PRICE` | Session price in IDR (e.g. `15000`) |
+| `NEXT_PUBLIC_PRINT_PRICE` | Print price per sheet in IDR (e.g. `5000`) |
+| `VOUCHER_CODES` | Comma-separated cash voucher codes (e.g. `CASH001,EVENT2024`) |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Your Cloudinary cloud name |
+| `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` | Cloudinary unsigned upload preset name |
+| `NEXT_PUBLIC_APP_URL` | Your deployed URL (required for Midtrans webhooks in production) |
 
 ## 🚢 Deployment
 
 ### Vercel (recommended)
 
-1. Push your fork to GitHub
+1. Push this repository to GitHub
 2. Go to [vercel.com/new](https://vercel.com/new) and import the repository
-3. No environment variables required — click **Deploy**
-4. Vercel enforces HTTPS automatically, satisfying the secure context requirement for camera access
+3. Add all environment variables from `.env.example` in the Vercel dashboard
+4. Deploy — Vercel auto-detects Next.js and builds correctly
 
-### Manual
+The included `vercel.json` configures the Singapore region (`sin1`) for lower latency in Southeast Asia.
+
+### Manual build
 
 ```bash
 npm run build
-npm run start
+npm start
 ```
 
-Serve over HTTPS in production. Camera access will not work over plain HTTP.
+## 📁 Architecture
 
----
-
-## 🗺️ Roadmap
-
-### MVP (current)
-- [x] Camera device picker
-- [x] Live preview with CSS filters
-- [x] Multi-shot capture with countdown
-- [x] Layout templates (single, double, grid, strip)
-- [x] Canvas composition engine
-- [x] PNG/JPEG export at 2× resolution
-- [x] Permission and error states
-- [x] Responsive design + accessibility
-
-### Phase 2
-- [ ] QR code share
-- [ ] Print mode (DPI-correct layout)
-- [ ] Animated GIF export
-- [ ] Branded overlay upload
-- [ ] Event preset system
-- [ ] Gallery mode
-- [ ] Cloud upload (S3/Cloudinary)
-- [ ] Kiosk mode
-- [ ] Native desktop app (Electron/Tauri) for full DSLR tethering
-
----
+```
+src/
+├── app/                  # Next.js App Router pages and API routes
+│   ├── booth/            # Main photobooth page
+│   ├── download/[id]/    # QR download page
+│   └── api/payment/      # Midtrans payment API routes
+├── components/
+│   ├── booth/            # Camera, capture, template, filter controls
+│   ├── payment/          # QRIS payment modal and pricing screen
+│   ├── review/           # Export, customize, print, QR panels
+│   └── errors/           # Camera error states
+├── lib/
+│   ├── camera/           # Camera hooks, capture, boomerang
+│   ├── composition/      # Canvas composition engine, templates, decorations
+│   ├── export/           # Image export, Cloudinary upload, boomerang WebM
+│   └── filters/          # Canvas and CSS filter implementations
+├── store/                # Zustand state (session, payment, print)
+└── types/                # Shared TypeScript types
+```
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a pull request.
-
----
+Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 ## 📄 License
 
-[MIT](./LICENSE) © 2026 Photobooth Contributors
+[MIT](./LICENSE) © 2024 Photobooth Contributors

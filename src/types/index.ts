@@ -8,7 +8,7 @@
 // ---------------------------------------------------------------------------
 
 /** Identifies a layout template for the final composition. */
-export type TemplateId = 'single' | 'double' | 'grid' | 'strip' | 'custom'
+export type TemplateId = 'single' | 'double' | 'grid' | 'strip' | 'filmstrip' | 'polaroid' | 'collage3' | 'custom'
 
 /**
  * A single photo slot within a template, using normalised 0–1 coordinates
@@ -30,7 +30,7 @@ export interface Template {
   id: TemplateId
   name: string
   /** Number of shots required to fill this template. */
-  shotCount: 1 | 2 | 4
+  shotCount: 1 | 2 | 3 | 4
   /** Canvas aspect ratio expressed as width / height. */
   canvasAspectRatio: number
   slots: TemplateSlot[]

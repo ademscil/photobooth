@@ -7,18 +7,20 @@ function generateTimestamp(): string {
 
 /**
  * Exports boomerang frames as a WebM video using MediaRecorder API.
+ * Uses captured ImageData frames directly (no live video capture).
  * Falls back to individual PNG downloads if MediaRecorder is not supported.
  */
-export async function exportBoomerangAsWebM(frames: ImageData[], fps: number): Promise<void> {
+export async function exportBoomerangAsWebM(frames: ImageData[], fps = 8): Promise<void> {
   if (frames.length === 0) throw new Error('No frames to export')
 
+  // Create ping-pong: forward + backward
+  const pingPong = createBoomerangFrames(frames)
+  const { width, height } = pingPong[0]
+
   if (!('MediaRecorder' in window)) {
-    await exportFramesAsPng(frames)
+    await exportFramesAsPng(pingPong)
     return
   }
-
-  const boomerangFrames = createBoomerangFrames(frames)
-  const { width, height } = boomerangFrames[0]
 
   const canvas = document.createElement('canvas')
   canvas.width = width
@@ -35,8 +37,7 @@ export async function exportBoomerangAsWebM(frames: ImageData[], fps: number): P
   try {
     recorder = new MediaRecorder(stream, { mimeType })
   } catch {
-    // MediaRecorder constructor failed — fall back to PNG frames
-    await exportFramesAsPng(frames)
+    await exportFramesAsPng(pingPong)
     return
   }
 
@@ -57,39 +58,33 @@ export async function exportBoomerangAsWebM(frames: ImageData[], fps: number): P
       setTimeout(() => URL.revokeObjectURL(url), 1000)
       resolve()
     }
-    recorder.onerror = (e) => reject(new Error(`MediaRecorder error: ${String(e)}`))
+    recorder.onerror = () => reject(new Error('Recording failed'))
 
     recorder.start()
 
     const frameMs = 1000 / fps
     let i = 0
-    let lastTime = 0
 
-    const drawNext = (timestamp: number) => {
-      if (i >= boomerangFrames.length) {
+    const draw = () => {
+      if (i >= pingPong.length) {
         recorder.stop()
         return
       }
-      if (timestamp - lastTime >= frameMs) {
-        ctx.putImageData(boomerangFrames[i], 0, 0)
-        i++
-        lastTime = timestamp
-      }
-      requestAnimationFrame(drawNext)
+      ctx.putImageData(pingPong[i++], 0, 0)
+      setTimeout(draw, frameMs)
     }
-    requestAnimationFrame(drawNext)
+    draw()
   })
 }
 
 async function exportFramesAsPng(frames: ImageData[]): Promise<void> {
-  const boomerangFrames = createBoomerangFrames(frames)
   const ts = Date.now()
-  for (let i = 0; i < Math.min(boomerangFrames.length, 8); i++) {
+  for (let i = 0; i < Math.min(frames.length, 8); i++) {
     const canvas = document.createElement('canvas')
-    canvas.width = boomerangFrames[i].width
-    canvas.height = boomerangFrames[i].height
+    canvas.width = frames[i].width
+    canvas.height = frames[i].height
     const ctx = canvas.getContext('2d')!
-    ctx.putImageData(boomerangFrames[i], 0, 0)
+    ctx.putImageData(frames[i], 0, 0)
     await new Promise<void>((resolve) => {
       canvas.toBlob((blob) => {
         if (!blob) { resolve(); return }
