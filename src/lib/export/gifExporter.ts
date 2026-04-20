@@ -1,0 +1,108 @@
+import { createBoomerangFrames } from '@/lib/camera/boomerang'
+
+function generateTimestamp(): string {
+  const now = new Date()
+  return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`
+}
+
+/**
+ * Exports boomerang frames as a WebM video using MediaRecorder API.
+ * Falls back to individual PNG downloads if MediaRecorder is not supported.
+ */
+export async function exportBoomerangAsWebM(frames: ImageData[], fps: number): Promise<void> {
+  if (frames.length === 0) throw new Error('No frames to export')
+
+  if (!('MediaRecorder' in window)) {
+    await exportFramesAsPng(frames)
+    return
+  }
+
+  const boomerangFrames = createBoomerangFrames(frames)
+  const { width, height } = boomerangFrames[0]
+
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Could not get canvas context')
+
+  const stream = canvas.captureStream(fps)
+  const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+    ? 'video/webm;codecs=vp9'
+    : 'video/webm'
+
+  let recorder: MediaRecorder
+  try {
+    recorder = new MediaRecorder(stream, { mimeType })
+  } catch {
+    // MediaRecorder constructor failed — fall back to PNG frames
+    await exportFramesAsPng(frames)
+    return
+  }
+
+  const chunks: Blob[] = []
+  recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data) }
+
+  return new Promise<void>((resolve, reject) => {
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: mimeType })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `photobooth-boomerang-${generateTimestamp()}.webm`
+      a.style.display = 'none'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      resolve()
+    }
+    recorder.onerror = (e) => reject(new Error(`MediaRecorder error: ${String(e)}`))
+
+    recorder.start()
+
+    const frameMs = 1000 / fps
+    let i = 0
+    let lastTime = 0
+
+    const drawNext = (timestamp: number) => {
+      if (i >= boomerangFrames.length) {
+        recorder.stop()
+        return
+      }
+      if (timestamp - lastTime >= frameMs) {
+        ctx.putImageData(boomerangFrames[i], 0, 0)
+        i++
+        lastTime = timestamp
+      }
+      requestAnimationFrame(drawNext)
+    }
+    requestAnimationFrame(drawNext)
+  })
+}
+
+async function exportFramesAsPng(frames: ImageData[]): Promise<void> {
+  const boomerangFrames = createBoomerangFrames(frames)
+  const ts = Date.now()
+  for (let i = 0; i < Math.min(boomerangFrames.length, 8); i++) {
+    const canvas = document.createElement('canvas')
+    canvas.width = boomerangFrames[i].width
+    canvas.height = boomerangFrames[i].height
+    const ctx = canvas.getContext('2d')!
+    ctx.putImageData(boomerangFrames[i], 0, 0)
+    await new Promise<void>((resolve) => {
+      canvas.toBlob((blob) => {
+        if (!blob) { resolve(); return }
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `photobooth-boomerang-${i + 1}-${ts}.png`
+        a.style.display = 'none'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => { URL.revokeObjectURL(url); resolve() }, 500)
+      }, 'image/png')
+    })
+  }
+}
