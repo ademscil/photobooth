@@ -59,8 +59,10 @@ export async function exportBoomerangAsWebM(frames: ImageData[], fps = 8): Promi
       // Stop all stream tracks
       stream.getTracks().forEach((t) => t.stop())
 
-      if (chunks.length === 0) {
-        // No data recorded — fall back to PNG
+      const totalSize = chunks.reduce((sum, c) => sum + c.size, 0)
+
+      if (chunks.length === 0 || totalSize < 1024) {
+        // No data or corrupt (< 1KB) — fall back to PNG
         exportFramesAsPng(pingPong).then(resolve).catch(reject)
         return
       }
@@ -88,18 +90,22 @@ export async function exportBoomerangAsWebM(frames: ImageData[], fps = 8): Promi
     const frameMs = Math.round(1000 / fps)
     let i = 0
 
+    // Use requestAnimationFrame for better timing between frames
     const drawNext = () => {
       if (i >= pingPong.length) {
-        // Give recorder time to capture the last frame
-        setTimeout(() => recorder.stop(), frameMs * 2)
+        // Give recorder time to capture the last frame (at least 500ms total)
+        const minDuration = 500
+        const elapsed = i * frameMs
+        const remaining = Math.max(minDuration - elapsed, frameMs * 2)
+        setTimeout(() => recorder.stop(), remaining)
         return
       }
       ctx.putImageData(pingPong[i++], 0, 0)
-      setTimeout(drawNext, frameMs)
+      setTimeout(() => requestAnimationFrame(drawNext), frameMs)
     }
 
-    // Small initial delay to let recorder initialise
-    setTimeout(drawNext, 50)
+    // Small initial delay to let recorder initialise, then use rAF
+    setTimeout(() => requestAnimationFrame(drawNext), 100)
   })
 }
 

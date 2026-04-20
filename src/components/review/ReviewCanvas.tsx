@@ -21,6 +21,8 @@ export function ReviewCanvas({ frames, templateId, filterId, frameEnabled, label
 
   useEffect(() => {
     if (frames.length === 0) return
+    // Guard: custom template requires customTemplate to be defined
+    if (templateId === 'custom' && !customTemplate) return
 
     setTimeout(() => setComposeError(null), 0)
     const id = requestAnimationFrame(() => {

@@ -21,8 +21,37 @@ export interface SessionDownloadData {
 }
 
 /**
+ * Encodes session data as a base64 URL-safe string for embedding in QR URLs.
+ * Works in browser without Buffer.
+ */
+function encodePhotosParam(photos: SessionPhoto[]): string {
+  try {
+    const json = JSON.stringify(photos)
+    // Use encodeURIComponent + btoa to handle Unicode safely
+    return btoa(unescape(encodeURIComponent(json)))
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * Decodes the base64 photos param from a download URL.
+ */
+export function decodePhotosParam(param: string): SessionPhoto[] | null {
+  try {
+    const json = decodeURIComponent(escape(atob(param)))
+    const parsed = JSON.parse(json)
+    if (Array.isArray(parsed)) return parsed as SessionPhoto[]
+    return null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Uploads all session photos to Cloudinary (if configured) and stores
- * the resulting URLs in sessionStorage for the QR download page.
+ * the resulting URLs in sessionStorage AND encodes them in the URL so
+ * the download page works on any device (e.g. phone scanning QR code).
  *
  * Falls back to local data URLs if Cloudinary is not configured.
  */
@@ -48,6 +77,7 @@ export async function generateSessionDownloadUrl(
           downloadUrl: result.downloadUrl,
           isCloudinary: true,
         })
+        console.log('[downloadLink] Template uploaded:', result.secureUrl)
       } catch (err) {
         console.error('[downloadLink] Failed to upload composed photo:', err)
       }
@@ -64,12 +94,13 @@ export async function generateSessionDownloadUrl(
           downloadUrl: result.downloadUrl,
           isCloudinary: true,
         })
+        console.log(`[downloadLink] Frame ${i + 1} uploaded:`, result.secureUrl)
       } catch (err) {
         console.error(`[downloadLink] Failed to upload frame ${i}:`, err)
       }
     }
   } else {
-    // Fallback: store as data URLs in sessionStorage
+    // Fallback: store as data URLs in sessionStorage only (too large for URL params)
     onProgress?.('Menyiapkan foto...')
 
     if (compositionOptions) {
@@ -101,10 +132,21 @@ export async function generateSessionDownloadUrl(
 
   const data: SessionDownloadData = { photos, createdAt: Date.now() }
 
+  // Always store in sessionStorage (same-device fallback)
   try {
     sessionStorage.setItem(storageKey, JSON.stringify(data))
   } catch {
     // sessionStorage full — silently ignore
+  }
+
+  // For Cloudinary photos: encode URLs in the URL itself so any device can access them
+  // Data URLs are too large to encode in URL params, so only do this for Cloudinary
+  const cloudinaryPhotos = photos.filter((p) => p.isCloudinary)
+  if (cloudinaryPhotos.length > 0) {
+    const encoded = encodePhotosParam(cloudinaryPhotos)
+    if (encoded) {
+      return `/download/${key}?d=${encoded}`
+    }
   }
 
   return `/download/${key}`

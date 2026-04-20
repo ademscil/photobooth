@@ -20,6 +20,7 @@ export function QRDownload({ sessionId, uploadProgress, isUploading }: QRDownloa
     if (!sessionId || isUploading) return
 
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    // sessionId may already contain query params (e.g. ?d=base64...)
     const url = `${origin}/download/${sessionId}`
     setTimeout(() => setDownloadUrl(url), 0)
 
@@ -30,7 +31,7 @@ export function QRDownload({ sessionId, uploadProgress, isUploading }: QRDownloa
       width: 180,
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' },
-    }).catch(() => setQrError(true))
+    }).catch(() => setTimeout(() => setQrError(true), 0))
   }, [sessionId, isUploading])
 
   if (isUploading) {

@@ -1,21 +1,35 @@
 'use client'
 
 import { use, useEffect, useState } from 'react'
-import { getSessionDownloadData, type SessionDownloadData } from '@/lib/export/downloadLink'
+import { getSessionDownloadData, decodePhotosParam, type SessionDownloadData } from '@/lib/export/downloadLink'
 
-export default function DownloadPage({ params }: { params: Promise<{ sessionId: string }> }) {
+export default function DownloadPage({ params, searchParams }: {
+  params: Promise<{ sessionId: string }>
+  searchParams: Promise<{ d?: string }>
+}) {
   const { sessionId } = use(params)
+  const { d: photosParam } = use(searchParams)
   const [data, setData] = useState<SessionDownloadData | null>(null)
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
+    // 1. Try URL param first — works on any device (phone scanning QR)
+    if (photosParam) {
+      const photos = decodePhotosParam(photosParam)
+      if (photos && photos.length > 0) {
+        setTimeout(() => setData({ photos, createdAt: Date.now() }), 0)
+        return
+      }
+    }
+
+    // 2. Fall back to sessionStorage (same device only)
     const result = getSessionDownloadData(sessionId)
     if (result) {
       setTimeout(() => setData(result), 0)
     } else {
       setTimeout(() => setNotFound(true), 0)
     }
-  }, [sessionId])
+  }, [sessionId, photosParam])
 
   const handleDownload = (downloadUrl: string, label: string) => {
     if (downloadUrl.startsWith('data:')) {
@@ -39,7 +53,7 @@ export default function DownloadPage({ params }: { params: Promise<{ sessionId: 
         <span className="text-5xl" aria-hidden="true">😕</span>
         <h1 className="text-xl font-bold text-foreground">Sesi tidak ditemukan</h1>
         <p className="text-sm text-muted-foreground">
-          Link download hanya berlaku di browser yang sama saat sesi foto berlangsung.
+          Link download sudah kadaluarsa atau tidak valid. Minta link baru dari operator.
         </p>
       </main>
     )

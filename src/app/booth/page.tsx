@@ -117,10 +117,12 @@ export default function BoothPage() {
         compositionOptions,
         (step) => setUploadProgress(step),
       ).then((url) => {
-        const id = url.split('/').pop() ?? null
+        // url may be /download/KEY or /download/KEY?d=base64
+        // Strip the /download/ prefix to get the id+params portion
+        const idPart = url.replace(/^\/download\//, '')
         setIsUploading(false)
         setUploadProgress(null)
-        setTimeout(() => { setPhase('reviewing'); setSessionDownloadId(id) }, 0)
+        setTimeout(() => { setPhase('reviewing'); setSessionDownloadId(idPart) }, 0)
       }).catch(() => {
         setIsUploading(false)
         setUploadProgress(null)
@@ -375,7 +377,7 @@ export default function BoothPage() {
 
                   <figure
                     className="relative w-full overflow-hidden rounded-xl bg-neutral-900"
-                    style={{ aspectRatio: '4/3', maxWidth: '640px', maxHeight: '50vh' }}
+                    style={{ aspectRatio: '4/3', maxWidth: '640px', maxHeight: '60vh' }}
                     aria-label="Live camera preview"
                   >
                     {!camera.isReady && (

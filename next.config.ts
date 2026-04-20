@@ -4,6 +4,8 @@ const MIDTRANS_SANDBOX = 'https://app.sandbox.midtrans.com'
 const MIDTRANS_PROD = 'https://app.midtrans.com'
 const MIDTRANS_API_SANDBOX = 'https://api.sandbox.midtrans.com'
 const MIDTRANS_API_PROD = 'https://api.midtrans.com'
+const CLOUDINARY_API = 'https://api.cloudinary.com'
+const CLOUDINARY_RES = 'https://res.cloudinary.com'
 
 const nextConfig: NextConfig = {
   async headers() {
@@ -22,8 +24,8 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https:",
               // Allow camera stream
               "media-src 'self' blob:",
-              // Allow Midtrans API calls from browser (Snap popup)
-              `connect-src 'self' ${MIDTRANS_API_SANDBOX} ${MIDTRANS_API_PROD} ${MIDTRANS_SANDBOX} ${MIDTRANS_PROD}`,
+              // Allow Midtrans API calls from browser (Snap popup) + Cloudinary uploads
+              `connect-src 'self' ${MIDTRANS_API_SANDBOX} ${MIDTRANS_API_PROD} ${MIDTRANS_SANDBOX} ${MIDTRANS_PROD} ${CLOUDINARY_API} ${CLOUDINARY_RES}`,
               // Allow Midtrans Snap iframe
               `frame-src 'self' ${MIDTRANS_SANDBOX} ${MIDTRANS_PROD}`,
               "worker-src 'self' blob:",
