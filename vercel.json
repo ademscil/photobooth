@@ -3,9 +3,5 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "regions": ["sin1"],
-  "env": {
-    "MIDTRANS_SERVER_KEY": "@midtrans_server_key",
-    "VOUCHER_CODES": "@voucher_codes"
-  }
+  "regions": ["sin1"]
 }
