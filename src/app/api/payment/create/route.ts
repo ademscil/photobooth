@@ -1,18 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerPackage } from '@/lib/payment/packages'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const midtransClient = require('midtrans-client')
 
+/** Order ids are generated client-side as PHOTO-<timestamp>-<rand>. */
+const ORDER_ID_PATTERN = /^PHOTO-\d+-[A-Z0-9]{4,12}$/
+
 export async function POST(req: NextRequest) {
   try {
-    const { orderId, amount, customerName = 'Photobooth Customer' } = await req.json()
+    const body = await req.json().catch(() => ({}))
+    const { orderId, packageId, customerName = 'Photobooth Customer' } = body as {
+      orderId?: string
+      packageId?: string
+      customerName?: string
+    }
 
-    if (!orderId || !amount) {
-      return NextResponse.json({ error: 'orderId and amount are required' }, { status: 400 })
+    if (!orderId || !ORDER_ID_PATTERN.test(orderId)) {
+      return NextResponse.json({ error: 'Invalid order id' }, { status: 400 })
+    }
+
+    // The amount is derived server-side from the package id. The client is
+    // never trusted to specify the price it will be charged.
+    const pkg = getServerPackage(packageId ?? '')
+    if (!pkg) {
+      return NextResponse.json({ error: 'Unknown package' }, { status: 400 })
     }
 
     const serverKey = process.env.MIDTRANS_SERVER_KEY
     if (!serverKey) {
-      return NextResponse.json({ error: 'MIDTRANS_SERVER_KEY not configured' }, { status: 500 })
+      return NextResponse.json({ error: 'Payment not configured' }, { status: 500 })
     }
 
     const isProduction = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true'
@@ -22,10 +38,18 @@ export async function POST(req: NextRequest) {
     const parameter = {
       transaction_details: {
         order_id: orderId,
-        gross_amount: Number(amount),
+        gross_amount: pkg.price,
       },
+      item_details: [
+        {
+          id: pkg.id,
+          name: `Photobooth ${pkg.name}`,
+          price: pkg.price,
+          quantity: 1,
+        },
+      ],
       customer_details: {
-        first_name: customerName,
+        first_name: String(customerName).slice(0, 60),
       },
       // Show all available payment methods — Midtrans will show what's enabled
       // for this merchant account. QRIS will appear if enabled in dashboard.
@@ -40,10 +64,11 @@ export async function POST(req: NextRequest) {
       token: transaction.token,
       redirectUrl: transaction.redirect_url,
       orderId,
+      amount: pkg.price,
     })
   } catch (error) {
-    const errMsg = error instanceof Error ? error.message : String(error)
-    console.error('[payment/create] error:', errMsg)
-    return NextResponse.json({ error: errMsg }, { status: 500 })
+    // Log details server-side only; return a generic message to the client.
+    console.error('[payment/create] error:', error instanceof Error ? error.message : String(error))
+    return NextResponse.json({ error: 'Gagal membuat transaksi' }, { status: 500 })
   }
 }

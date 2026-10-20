@@ -3,6 +3,47 @@ import { getTemplate } from './templates'
 import { drawFrame, drawLabel, drawFilmstripDecoration, drawPolaroidDecoration } from './decorations'
 import { drawFrameStyle } from './frameTemplates'
 
+/**
+ * Cache of decoded custom-template images keyed by their data URL.
+ *
+ * `compose` runs synchronously (callers draw to a canvas in one pass), but
+ * images must be fully decoded before `drawImage` or they render as blank.
+ * Callers warm this cache via `warmCustomTemplateImages` (async) before
+ * composing; `compose` then draws from the cache synchronously.
+ */
+const imageCache = new Map<string, HTMLImageElement>()
+
+function decodeImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('Failed to decode image'))
+    img.src = src
+  })
+}
+
+/**
+ * Pre-decodes a custom template's background/overlay images and stores them
+ * in the module cache. Await this before calling `compose` with a custom
+ * template so the images are available to draw synchronously.
+ */
+export async function warmCustomTemplateImages(customTemplate?: CustomTemplate | null): Promise<void> {
+  if (!customTemplate) return
+  const sources = [customTemplate.backgroundImage, customTemplate.overlayImage].filter(
+    (s): s is string => typeof s === 'string' && s.length > 0,
+  )
+  await Promise.all(
+    sources.map(async (src) => {
+      if (imageCache.has(src)) return
+      try {
+        imageCache.set(src, await decodeImage(src))
+      } catch {
+        // Leave uncached — compose will simply skip a missing image.
+      }
+    }),
+  )
+}
+
 /** 4R print size reference: 10×15cm at 300dpi ≈ 1181×1772px
  *  We use scale factor on BASE_WIDTH=600 to get print quality output.
  *  scale=4 → 2400px wide ≈ 4R at 300dpi
@@ -87,12 +128,11 @@ function composeCustom(
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
-  // 2. Background image (drawn first, behind photos)
+  // 2. Background image (drawn first, behind photos).
+  //    Drawn from the decoded-image cache warmed via warmCustomTemplateImages.
   if (customTemplate.backgroundImage) {
-    const bgImg = new Image()
-    bgImg.src = customTemplate.backgroundImage
-    // Draw synchronously if already loaded (data URL)
-    ctx.drawImage(bgImg, 0, 0, canvasWidth, canvasHeight)
+    const bgImg = imageCache.get(customTemplate.backgroundImage)
+    if (bgImg) ctx.drawImage(bgImg, 0, 0, canvasWidth, canvasHeight)
   }
 
   // 3. Photo slots
@@ -107,11 +147,11 @@ function composeCustom(
     )
   })
 
-  // 4. Overlay image (drawn on top of photos — for frames/borders/branding)
+  // 4. Overlay image (drawn on top of photos — for frames/borders/branding).
+  //    Drawn from the decoded-image cache warmed via warmCustomTemplateImages.
   if (customTemplate.overlayImage) {
-    const overlayImg = new Image()
-    overlayImg.src = customTemplate.overlayImage
-    ctx.drawImage(overlayImg, 0, 0, canvasWidth, canvasHeight)
+    const overlayImg = imageCache.get(customTemplate.overlayImage)
+    if (overlayImg) ctx.drawImage(overlayImg, 0, 0, canvasWidth, canvasHeight)
   }
 
   // 5. Decorations

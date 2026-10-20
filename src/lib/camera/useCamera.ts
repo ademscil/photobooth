@@ -74,13 +74,6 @@ export function useCamera(selectedDeviceId: string | null): UseCameraResult {
       video.removeEventListener('playing', handleReady)
       video.removeEventListener('waiting', handleWaiting)
     }
-
-    cleanupListenersRef.current = () => {
-      video.removeEventListener('canplay', handleReady)
-      video.removeEventListener('loadeddata', handleReady)
-      video.removeEventListener('playing', handleReady)
-      video.removeEventListener('waiting', handleWaiting)
-    }
   }, [])
 
   /**

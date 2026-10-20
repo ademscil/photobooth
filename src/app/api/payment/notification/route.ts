@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { recordOrderStatus, type OrderStatus } from '@/lib/server/orderStore'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const midtransClient = require('midtrans-client')
 
@@ -6,6 +7,10 @@ const midtransClient = require('midtrans-client')
  * POST /api/payment/notification
  * Midtrans webhook — receives payment status notifications.
  * Configure this URL in Midtrans dashboard → Settings → Payment → Notification URL
+ *
+ * Authenticity is verified by re-fetching the transaction from Midtrans via
+ * `coreApi.transaction.notification`. The resolved status is persisted so the
+ * webhook acts as the source of truth; repeated events are idempotent.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -30,27 +35,27 @@ export async function POST(req: NextRequest) {
     const transactionStatus = statusResponse.transaction_status
     const fraudStatus = statusResponse.fraud_status
 
-    console.log(`Payment notification: orderId=${orderId} status=${transactionStatus}`)
-
+    let resolved: OrderStatus = 'pending'
     if (transactionStatus === 'capture') {
-      if (fraudStatus === 'accept') {
-        console.log(`Order ${orderId}: payment captured and accepted`)
-      }
+      resolved = fraudStatus === 'accept' ? 'paid' : 'pending'
     } else if (transactionStatus === 'settlement') {
-      console.log(`Order ${orderId}: payment settled`)
+      resolved = 'paid'
     } else if (
       transactionStatus === 'cancel' ||
       transactionStatus === 'deny' ||
       transactionStatus === 'expire'
     ) {
-      console.log(`Order ${orderId}: payment ${transactionStatus}`)
+      resolved = transactionStatus
     } else if (transactionStatus === 'pending') {
-      console.log(`Order ${orderId}: payment pending`)
+      resolved = 'pending'
     }
+
+    // Idempotent: terminal states are not overwritten by late/duplicate events.
+    recordOrderStatus(orderId, resolved)
 
     return NextResponse.json({ status: 'ok' })
   } catch (error) {
-    console.error('Midtrans notification error:', error)
+    console.error('Midtrans notification error:', error instanceof Error ? error.message : String(error))
     return NextResponse.json({ error: 'Notification processing failed' }, { status: 500 })
   }
 }

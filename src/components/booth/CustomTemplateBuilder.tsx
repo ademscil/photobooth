@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CustomTemplate, TemplateSlot } from '@/types'
 
 interface CustomTemplateBuilderProps {
@@ -61,6 +61,19 @@ export function CustomTemplateBuilder({ onSave, onCancel, existing }: CustomTemp
 
   const bgInputRef = useRef<HTMLInputElement>(null)
   const overlayInputRef = useRef<HTMLInputElement>(null)
+
+  // Accessibility: close on Escape and restore focus on unmount.
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      previouslyFocused?.focus?.()
+    }
+  }, [onCancel])
 
   const preset = PRESETS[selectedPreset]
 

@@ -49,14 +49,44 @@ export function ExportPanel({ frames, compositionOptions, onStartOver }: ExportP
   const [showPayment, setShowPayment] = useState(false)
   const [pendingFormat, setPendingFormat] = useState<'png' | 'jpeg' | null>(null)
 
-  const { status: paymentStatus, reset: resetPayment } = usePaymentStore()
+  const { status: paymentStatus, orderId, paymentMethod, reset: resetPayment } = usePaymentStore()
   const isPaid = paymentStatus === 'paid'
+
+  /**
+   * Confirms payment is genuinely settled before releasing the download.
+   *
+   * For QRIS we re-check the transaction with Midtrans server-side via
+   * /api/payment/status — the client `status` flag alone is not trusted.
+   * Cash/voucher payments are validated per-request by /api/payment/voucher
+   * (operator-issued codes), so the in-session flag is authoritative there.
+   */
+  const confirmPaidServerSide = async (): Promise<boolean> => {
+    if (!PAYMENT_ENABLED) return true
+    if (paymentMethod === 'cash') return isPaid
+    if (!orderId) return false
+    try {
+      const res = await fetch(`/api/payment/status?orderId=${encodeURIComponent(orderId)}`)
+      if (!res.ok) return false
+      const data = await res.json()
+      return data.isPaid === true
+    } catch {
+      return false
+    }
+  }
 
   const handleExport = async (format: 'png' | 'jpeg') => {
     if (PAYMENT_ENABLED && !isPaid) {
       setPendingFormat(format)
       setShowPayment(true)
       return
+    }
+    if (PAYMENT_ENABLED) {
+      const confirmed = await confirmPaidServerSide()
+      if (!confirmed) {
+        setErrorMessage('Pembayaran belum terverifikasi. Silakan selesaikan pembayaran.')
+        setExportStatus('error')
+        return
+      }
     }
     await doExport(format)
   }

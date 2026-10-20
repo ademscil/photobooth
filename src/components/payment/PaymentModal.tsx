@@ -93,7 +93,7 @@ function CashPaymentForm({ amount, onSuccess, onCancel }: { amount: number; onSu
 }
 
 export function PaymentModal({ onPaymentSuccess, onCancel }: PaymentModalProps) {
-  const { status, orderId, amount, error, paymentMethod, setStatus, setOrderId, setSnapToken, setError, reset } =
+  const { status, orderId, amount, error, paymentMethod, selectedPackage, setStatus, setOrderId, setSnapToken, setError, reset } =
     usePaymentStore()
 
   const [isPolling, setIsPolling] = useState(false)
@@ -144,9 +144,16 @@ export function PaymentModal({ onPaymentSuccess, onCancel }: PaymentModalProps) 
   const startPolling = useCallback((oid: string) => {
     if (pollingRef.current) clearInterval(pollingRef.current)
     setIsPolling(true)
+    // Stop polling after ~5 minutes to avoid an unbounded background loop.
+    const deadline = Date.now() + 5 * 60_000
     pollingRef.current = setInterval(async () => {
+      if (Date.now() > deadline) {
+        clearInterval(pollingRef.current!)
+        setIsPolling(false)
+        return
+      }
       try {
-        const res = await fetch(`/api/payment/status?orderId=${oid}`)
+        const res = await fetch(`/api/payment/status?orderId=${encodeURIComponent(oid)}`)
         const data = await res.json()
         if (data.isPaid) {
           clearInterval(pollingRef.current!)
@@ -180,7 +187,7 @@ export function PaymentModal({ onPaymentSuccess, onCancel }: PaymentModalProps) 
       const res = await fetch('/api/payment/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: newOrderId, amount }),
+        body: JSON.stringify({ orderId: newOrderId, packageId: selectedPackage?.id }),
       })
 
       if (!res.ok) {
@@ -216,7 +223,7 @@ export function PaymentModal({ onPaymentSuccess, onCancel }: PaymentModalProps) 
       setStatus('failed')
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
     }
-  }, [amount, onPaymentSuccess, setError, setOrderId, setSnapToken, setStatus, startPolling])
+  }, [selectedPackage, onPaymentSuccess, setError, setOrderId, setSnapToken, setStatus, startPolling])
 
   // Auto-initiate once Snap is ready (QRIS only)
   useEffect(() => {
@@ -232,16 +239,30 @@ export function PaymentModal({ onPaymentSuccess, onCancel }: PaymentModalProps) 
     }
   }, [])
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     if (pollingRef.current) clearInterval(pollingRef.current)
     reset()
     onCancel()
-  }
+  }, [onCancel, reset])
 
   const handleCashSuccess = () => {
     setStatus('paid')
     onPaymentSuccess()
   }
+
+  // Accessibility: close on Escape and restore focus to the previously
+  // focused element when the dialog unmounts.
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && status !== 'paid') handleCancel()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      previouslyFocused?.focus?.()
+    }
+  }, [status, handleCancel])
 
   return (
     <div
@@ -331,8 +352,11 @@ export function PaymentModal({ onPaymentSuccess, onCancel }: PaymentModalProps) 
                 </Button>
               )}
 
-              {/* Sandbox test button */}
-              {process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION !== 'true' && status !== 'paid' && (
+              {/* Sandbox test button — only when explicitly opted in AND not in production.
+                  Never ships enabled by default so it cannot be used to bypass payment. */}
+              {process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION !== 'true' &&
+                process.env.NEXT_PUBLIC_ENABLE_PAYMENT_SIMULATION === 'true' &&
+                status !== 'paid' && (
                 <button
                   type="button"
                   onClick={() => {

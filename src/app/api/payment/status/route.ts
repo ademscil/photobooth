@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { recordOrderStatus } from '@/lib/server/orderStore'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const midtransClient = require('midtrans-client')
 
@@ -37,6 +38,19 @@ export async function GET(req: NextRequest) {
       statusResponse.transaction_status === 'capture'
 
     const isPending = statusResponse.transaction_status === 'pending'
+
+    // Keep the server order store in sync with verified Midtrans state.
+    if (isPaid) {
+      recordOrderStatus(orderId, 'paid')
+    } else if (isPending) {
+      recordOrderStatus(orderId, 'pending')
+    } else if (
+      statusResponse.transaction_status === 'cancel' ||
+      statusResponse.transaction_status === 'deny' ||
+      statusResponse.transaction_status === 'expire'
+    ) {
+      recordOrderStatus(orderId, statusResponse.transaction_status)
+    }
 
     return NextResponse.json({
       orderId,

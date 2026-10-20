@@ -1,5 +1,5 @@
 import type { CapturedFrame, CompositionOptions, ExportFormat, ExportOptions, ExportQuality } from '@/types'
-import { compose } from '@/lib/composition/composer'
+import { compose, warmCustomTemplateImages } from '@/lib/composition/composer'
 import { generateFilename } from './filename'
 
 export const QUALITY_MAP: Record<ExportQuality, number> = {
@@ -23,6 +23,9 @@ export async function exportImage(
   exportOptions: ExportOptions,
 ): Promise<void> {
   const { format, quality } = exportOptions
+
+  // Decode any custom-template images before composing (synchronous draw).
+  await warmCustomTemplateImages(compositionOptions.customTemplate)
 
   // scale=4 → 2400px wide → 4R print quality (300dpi at 10×15cm)
   const canvas = compose(frames, { ...compositionOptions, scale: 4 })

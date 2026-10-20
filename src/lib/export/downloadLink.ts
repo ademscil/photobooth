@@ -1,6 +1,6 @@
 import type { CapturedFrame } from '@/types'
 import { uploadCanvasToCloudinary, uploadImageDataToCloudinary, isCloudinaryConfigured } from './cloudinaryUpload'
-import { compose } from '@/lib/composition/composer'
+import { compose, warmCustomTemplateImages } from '@/lib/composition/composer'
 import type { CompositionOptions } from '@/types'
 
 const SESSION_KEY_PREFIX = 'photobooth:session:'
@@ -27,8 +27,11 @@ export interface SessionDownloadData {
 function encodePhotosParam(photos: SessionPhoto[]): string {
   try {
     const json = JSON.stringify(photos)
-    // Use encodeURIComponent + btoa to handle Unicode safely
-    return btoa(unescape(encodeURIComponent(json)))
+    // Encode via UTF-8 bytes → base64 to handle Unicode safely.
+    const bytes = new TextEncoder().encode(json)
+    let binary = ''
+    for (const b of bytes) binary += String.fromCharCode(b)
+    return btoa(binary)
   } catch {
     return ''
   }
@@ -36,15 +39,38 @@ function encodePhotosParam(photos: SessionPhoto[]): string {
 
 /**
  * Decodes the base64 photos param from a download URL.
+ *
+ * Only accepts Cloudinary HTTPS URLs so a crafted param cannot inject a
+ * javascript:/data: URL that the download page would render or open.
  */
 export function decodePhotosParam(param: string): SessionPhoto[] | null {
   try {
-    const json = decodeURIComponent(escape(atob(param)))
+    const binary = atob(param)
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
+    const json = new TextDecoder().decode(bytes)
     const parsed = JSON.parse(json)
-    if (Array.isArray(parsed)) return parsed as SessionPhoto[]
-    return null
+    if (!Array.isArray(parsed)) return null
+    const photos = parsed as SessionPhoto[]
+    const safe = photos.every(
+      (p) =>
+        p &&
+        typeof p.url === 'string' &&
+        typeof p.downloadUrl === 'string' &&
+        isSafeHttpsUrl(p.url) &&
+        isSafeHttpsUrl(p.downloadUrl),
+    )
+    return safe ? photos : null
   } catch {
     return null
+  }
+}
+
+/** True only for absolute https:// URLs — blocks javascript:/data: injection. */
+function isSafeHttpsUrl(value: string): boolean {
+  try {
+    return new URL(value).protocol === 'https:'
+  } catch {
+    return false
   }
 }
 
@@ -63,6 +89,9 @@ export async function generateSessionDownloadUrl(
   const key = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const storageKey = `${SESSION_KEY_PREFIX}${key}`
   const photos: SessionPhoto[] = []
+
+  // Decode any custom-template images before composing (synchronous draw).
+  await warmCustomTemplateImages(compositionOptions?.customTemplate)
 
   if (isCloudinaryConfigured()) {
     // Upload composed template photo

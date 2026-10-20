@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { CapturedFrame } from '@/types'
 import { usePrintStore } from '@/store/printStore'
 
@@ -17,15 +17,20 @@ function formatRupiah(amount: number) {
 }
 
 function FrameThumb({ imageData }: { imageData: ImageData }) {
-  const canvas = document.createElement('canvas')
-  canvas.width = imageData.width
-  canvas.height = imageData.height
-  const ctx = canvas.getContext('2d')!
-  ctx.putImageData(imageData, 0, 0)
+  const src = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = imageData.width
+    canvas.height = imageData.height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return ''
+    ctx.putImageData(imageData, 0, 0)
+    return canvas.toDataURL('image/jpeg', 0.7)
+  }, [imageData])
+
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={canvas.toDataURL('image/jpeg', 0.7)}
+      src={src}
       alt="Thumbnail foto"
       className="h-16 w-16 rounded-lg object-cover"
     />

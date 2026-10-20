@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CapturedFrame, CustomTemplate, FilterId, TemplateId } from '@/types'
 import type { FrameStyle } from '@/lib/composition/frameTemplates'
-import { compose } from '@/lib/composition/composer'
+import { compose, warmCustomTemplateImages } from '@/lib/composition/composer'
 
 interface ReviewCanvasProps {
   frames: CapturedFrame[]
@@ -25,32 +25,47 @@ export function ReviewCanvas({ frames, templateId, filterId, frameEnabled, label
     if (templateId === 'custom' && !customTemplate) return
 
     setTimeout(() => setComposeError(null), 0)
-    const id = requestAnimationFrame(() => {
-      try {
-        const composed = compose(frames, {
-          template: templateId,
-          filter: filterId,
-          frameEnabled,
-          labelText,
-          scale: 1,
-          customTemplate: customTemplate ?? undefined,
-          frameStyle,
-        })
 
-        const canvas = canvasRef.current
-        if (!canvas) return
-        canvas.width = composed.width
-        canvas.height = composed.height
-        const ctx = canvas.getContext('2d')
-        if (!ctx) { setTimeout(() => setComposeError('Canvas context unavailable'), 0); return }
-        ctx.drawImage(composed, 0, 0)
-      } catch (err) {
-        console.error('[ReviewCanvas] Composition failed:', err)
-        setTimeout(() => setComposeError(err instanceof Error ? err.message : 'Composition failed'), 0)
-      }
-    })
+    let cancelled = false
+    let rafId = 0
 
-    return () => cancelAnimationFrame(id)
+    const run = async () => {
+      // Decode custom-template images before the synchronous compose pass.
+      await warmCustomTemplateImages(customTemplate ?? undefined)
+      if (cancelled) return
+
+      rafId = requestAnimationFrame(() => {
+        try {
+          const composed = compose(frames, {
+            template: templateId,
+            filter: filterId,
+            frameEnabled,
+            labelText,
+            scale: 1,
+            customTemplate: customTemplate ?? undefined,
+            frameStyle,
+          })
+
+          const canvas = canvasRef.current
+          if (!canvas) return
+          canvas.width = composed.width
+          canvas.height = composed.height
+          const ctx = canvas.getContext('2d')
+          if (!ctx) { setTimeout(() => setComposeError('Canvas context unavailable'), 0); return }
+          ctx.drawImage(composed, 0, 0)
+        } catch (err) {
+          console.error('[ReviewCanvas] Composition failed:', err)
+          setTimeout(() => setComposeError(err instanceof Error ? err.message : 'Composition failed'), 0)
+        }
+      })
+    }
+
+    void run()
+
+    return () => {
+      cancelled = true
+      if (rafId) cancelAnimationFrame(rafId)
+    }
   }, [frames, templateId, filterId, frameEnabled, labelText, customTemplate, frameStyle])
 
   if (composeError) {
