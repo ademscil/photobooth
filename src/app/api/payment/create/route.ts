@@ -68,7 +68,31 @@ export async function POST(req: NextRequest) {
     })
   } catch (error) {
     // Log details server-side only; return a generic message to the client.
-    console.error('[payment/create] error:', error instanceof Error ? error.message : String(error))
+    const rawMessage = error instanceof Error ? error.message : String(error)
+    // Midtrans client errors carry the gateway's JSON response in ApiResponse.
+    const apiResponse = (error as { ApiResponse?: unknown })?.ApiResponse
+    const httpStatusCode = (error as { httpStatusCode?: unknown })?.httpStatusCode
+    console.error('[payment/create] error:', rawMessage, apiResponse ?? '')
+
+    // In sandbox/dev, surface the real cause so misconfiguration is debuggable.
+    // In production (live merchant) the message stays generic.
+    const isProduction = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true'
+    if (!isProduction) {
+      return NextResponse.json(
+        {
+          error: 'Gagal membuat transaksi',
+          debug: {
+            midtransMessage: rawMessage,
+            httpStatusCode: httpStatusCode ?? null,
+            apiResponse: apiResponse ?? null,
+            serverKeyPresent: Boolean(process.env.MIDTRANS_SERVER_KEY),
+            serverKeyPrefix: process.env.MIDTRANS_SERVER_KEY?.slice(0, 11) ?? null,
+            isProductionFlag: process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION ?? null,
+          },
+        },
+        { status: 500 },
+      )
+    }
     return NextResponse.json({ error: 'Gagal membuat transaksi' }, { status: 500 })
   }
 }
